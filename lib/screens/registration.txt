@@ -1,0 +1,561 @@
+import 'dart:io';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+
+
+
+
+class Registration extends StatefulWidget {
+  const Registration({super.key});
+
+  @override
+  State<Registration> createState() => _RegistrationState();
+}
+
+class _RegistrationState extends State<Registration> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  static var _isInit = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this);
+  }
+
+  @override
+  List<String> type = ["Teacher", "Staff"];
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+ // void didChangeDependencies() {
+  //     super.didChangeDependencies();
+  //     if (_isInit) {
+  //       Provider.of<RegisterProvider>(context, listen: false).getCity();
+  //       setState(() {
+  //         _isInit = false;
+  //       });
+  //     }
+  //
+  //   }
+
+  Widget build(BuildContext context) {
+   // var reg = Provider.of<RegisterProvider>(context);
+
+    void _settingModalBottomSheet() {
+      showModalBottomSheet(
+          context: context,
+          builder: (BuildContext bc) {
+            return SizedBox(
+              height: 150,
+              child: Column(
+                children: <Widget>[
+                  ListTile(
+                      leading: const Icon(Icons.camera),
+                      title: const Text('Camera'),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final pickedFile = await _picker.pickImage(source: ImageSource.camera, maxHeight: 500, maxWidth: 500, imageQuality: 50);
+
+                     //   reg.uploadProfileImage(pickedFile!.path);
+                      }),
+                  ListTile(
+                    leading: const Icon(Icons.image),
+                    title: const Text('Gallery'),
+                    onTap: () async {
+                      Navigator.pop(context);
+                      final pickedFile = await _picker.pickImage(source: ImageSource.gallery, maxHeight: 500, maxWidth: 500, imageQuality: 50);
+
+                    //  reg.uploadProfileImage(pickedFile!.path);
+                    },
+                  ),
+                ],
+              ),
+            );
+          });
+    }
+
+    double height = MediaQuery.of(context).size.height;
+    double width = MediaQuery.of(context).size.width;
+
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      //color set to transperent or set your own color
+      statusBarIconBrightness: Brightness.dark,
+      //set brightness for icons, like dark background light icons
+    ));
+
+    return Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: Colors.white,
+        body: SafeArea(
+            child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.only(right: 20, left: 20),
+                height: 60,
+                color: Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Image(
+                            image: Image.asset('assets/icons/goback.png').image,
+                            height: 20.0,
+                            width: 20.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                  ),
+                  alignment: Alignment.centerLeft,
+                  child: const Text(
+                    "Register",
+                    style: TextStyle(
+                      color: Color(0xff1f1d1d),
+                      fontSize: 28,
+                      fontFamily: "Playfair Display",
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ]),
+              const SizedBox(
+                height: 20,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                      height: 150,
+                      width: 115,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.rectangle,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Stack(
+                        children: [
+                          GestureDetector(
+                              onTap: () {
+                                _settingModalBottomSheet();
+                              },
+                              child: reg.profileImage.isEmpty
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(25),
+                                      child: Image(
+                                        fit: BoxFit.cover,
+                                        height: 150,
+                                        width: 150,
+                                        image: Image.asset('assets/My Picture.png').image,
+                                      ))
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(25),
+                                      child: Image.file(
+                                        File(reg.profileImage),
+                                        fit: BoxFit.cover,
+                                        height: 120,
+                                        width: 120,
+                                      ),
+                                    )),
+                        ],
+                      ))
+                ],
+              ),
+              Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Text(
+                  "City",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xff1f1d1d),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              reg.isLoading?
+              const Center(
+                child: SpinKitCircle(color: Colors.yellowAccent),
+              ):
+              Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: Container(
+                  height: 50,
+                  width: width,
+                  decoration: BoxDecoration(
+                    color: const Color(0x19f6e80b),
+                    border: Border.all(width: 1, color: Colors.white),
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(5),
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton2<String>(
+                      buttonPadding: const EdgeInsets.only(left: 8, right: 8),
+                      alignment: AlignmentDirectional.centerStart,
+                      value: reg.cityName,
+                      //   borderRadius: BorderRadius.circular(12),
+                      //   color: ConstantColors.mainColor,
+                      // ),
+                      buttonHeight: 20,
+                      buttonWidth: 60,
+                      itemHeight: 35,
+                      dropdownMaxHeight: height * 0.60,
+
+                      icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+                      onChanged: (newValue) {
+                        reg.updateCityName(newValue!);
+                        reg.instituteName = 'Select Institute';
+
+                      },
+                      items: reg.CityItems.map((cityModel value) {
+                        return DropdownMenuItem<String>(
+                          value: value.name,
+
+                          child: Row(children: [
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            Text(value.name,
+                                style: const TextStyle(
+                                  fontFamily: "regular",
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                )),
+                          ]),
+                        );
+                      }).toList(),
+
+                    ),
+
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: reg.city_idError,
+                child: Column(
+                  children: const [
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Text(
+                      "*City is Invalid.",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              reg.isLoading?
+              const Center(
+                child: SpinKitCircle(color: Colors.yellowAccent),
+              ):
+              Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Text(
+                  "Institution",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xff1f1d1d),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: Container(
+                  height: 50,
+                  width: width,
+                  decoration: BoxDecoration(
+                    color: const Color(0x19f6e80b),
+                    border: Border.all(width: 1, color: Colors.white),
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(5),
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton2<String>(
+                      buttonPadding: const EdgeInsets.only(left: 8, right: 8),
+                      alignment: AlignmentDirectional.centerStart,
+                      value: reg.instituteName,
+                      //   borderRadius: BorderRadius.circular(12),
+                      //   color: ConstantColors.mainColor,
+                      // ),
+                      buttonHeight: 20,
+                      buttonWidth: 60,
+                      itemHeight: 35,
+                      dropdownMaxHeight: height * 0.60,
+
+                      icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+                      onChanged: (newValue) {
+                        reg.updateInstitute(newValue!);
+                      },
+                      items: reg.IntItems.map((instituteModel value) {
+                        return DropdownMenuItem<String>(
+                          value: value.name,
+                          child: Row(children: [
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            Text(value.name,
+                                style: const TextStyle(
+                                  fontFamily: "regular",
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                )),
+                          ]),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+              Visibility(
+                visible: reg.instituteNameError,
+                child: Column(
+                  children: const [
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Text(
+                      "*Institute is Invalid.",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Text(
+                  "Register As",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xff1f1d1d),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: Container(
+                  height: 50,
+                  width: width,
+                  decoration: BoxDecoration(
+                    color: const Color(0x19f6e80b),
+                    border: Border.all(width: 1, color: Colors.white),
+                    borderRadius: const BorderRadius.all(
+                      Radius.circular(5),
+                    ),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton2<String>(
+                      buttonPadding: const EdgeInsets.only(left: 8, right: 8),
+                      alignment: AlignmentDirectional.centerStart,
+                      value: reg.user,
+                      //   borderRadius: BorderRadius.circular(12),
+                      //   color: ConstantColors.mainColor,
+                      // ),
+                      buttonHeight: 20,
+                      buttonWidth: 60,
+                      itemHeight: 35,
+                      dropdownMaxHeight: height * 0.60,
+
+                      icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+                      onChanged: (newValue) {
+                        reg.updateUserType(newValue!);
+                      },
+                      items: type.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Row(children: [
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            Text(value,
+                                style: const TextStyle(
+                                  fontFamily: "regular",
+                                  color: Colors.black,
+                                  fontSize: 14,
+                                )),
+                          ]),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Text(
+                  "Name",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xff1f1d1d),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Container(
+                width: width,
+                height: 50,
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: TextFormField(
+                  decoration: const InputDecoration(fillColor: Color(0x19f6e80b), filled: true, border: InputBorder.none),
+                  controller: reg.nameController,
+                  onChanged: (value) {},
+                  validator: (value) {
+                    if (value!.isEmpty) {
+                      return "";
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              Visibility(
+                visible: reg.nameError,
+                child: Column(
+                  children: const [
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Text(
+                      "*Name is Invalid.",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Container(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 20),
+                child: const Text(
+                  "Email Address",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xff1f1d1d),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Container(
+                width: width,
+                height: 50,
+                padding: const EdgeInsets.only(left: 20, right: 20),
+                child: TextFormField(
+                    controller: reg.emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    onChanged: (value) {
+                      // this is not require if you declare a controller than automaticaly value change  it will assign to controller
+                      // reg.emailController.text = value;
+                    },
+                    decoration: const InputDecoration(fillColor: Color(0x19f6e80b), filled: true, border: InputBorder.none),
+                    validator: (value) {
+
+                    }),
+              ),
+              Visibility(
+                visible: reg.emailError,
+                child: Column(
+                  children: const [
+                    SizedBox(
+                      height: 5,
+                    ),
+                    Text(
+                      "*Email is Invalid.",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Container(
+                  width: width,
+                  height: 50,
+                  padding: const EdgeInsets.only(left: 20, right: 20),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(primary: const Color(0xff1f1d1d)),
+                    onPressed: () {
+                      reg.register(context);
+                    },
+                    child: Container(
+                      width: width,
+                      child: const Text(
+                        "Submit",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xfff6e80b),
+                          fontSize: 16,
+                          fontFamily: "Lato",
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  )),
+              const SizedBox(
+                height: 50,
+              ),
+            ],
+          ),
+        )));
+  }
+}
